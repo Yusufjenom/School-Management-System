@@ -1,0 +1,6 @@
+{
+    "compilerOption":{
+        "module": "NodeNext",
+        "moduleResolution": "NodeNext"
+    }
+}
