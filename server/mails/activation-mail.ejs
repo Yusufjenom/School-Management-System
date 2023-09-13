@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yus LNS activation email</title>
+</head>
+<body>
+    <div>
+        <div>
+            <h1>Welcome to Yus Atlantis</h1>
+        </div>
+        <div>
+            <p>Hello <%=user.name%></p>
+            <p>Thank you for registering with us. To activate your account use the following activation code:</p>
+            <h2><%= activationCode%></h2>
+            <p>Please enter this code on the activation page within the next 5 minutes</p>
+            <p>If you did not register for Yus artlantis please ignore this mail</p>
+        </div>
+        <div>
+            <p>If you have any questions, please do not hesistate to contact us at <a href="">support@yus.com</a></p>
+        </div>
+    </div>
+</body>
+</html>
