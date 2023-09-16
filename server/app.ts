@@ -8,6 +8,7 @@ export const app = express();
 require('dotenv').config();
 require('./Database/db');
 import {ErrorMiddleware} from "./middleware/error";
+import userRouter from "./routes/userRoute";
 
 //BODY PARSER
 app.use(express.json({limit: "50mb"}));
@@ -19,6 +20,9 @@ app.use(cookieParser());
 app.use(cors({
     origin:process.env.ORIGIN
 }));
+
+//ROUTES
+app.use('/api/v1', userRouter);
 
 //testing the API
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {

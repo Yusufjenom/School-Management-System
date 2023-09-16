@@ -2,6 +2,7 @@ import {Request, Response, NextFunction} from 'express';
 import userModel,{IUser} from '../models/userModel';
 import ErrorHandler from '../utils/errorHandler';
 import {catchAsyncError} from '../middleware/catchAsyncError';
+import sendMail from '../utils/sendMail';
 //import jwt from 'jsonwebtoken';
 const jwt = require("jsonwebtoken");
 require('dotenv').config();
@@ -38,10 +39,22 @@ export const signupUser = catchAsyncError(async(req:Request, res:Response, next:
             activationCode
         };
         const html = await ejs.renderFile(path.join(__dirname,'../mails/activation-mail.ejs'), data);
-        try{}
-        catch(err){
-            
+        try{
+            await sendMail({
+                email: user.email,
+                subject: "Activate your account",
+                template: "activation-mail.ejs",
+                data,
+            });
+            res.status(201).json({
+                success: true,
+                message: `Please check your email: ${user.email} to activate your account`,
+                activationToken: activationToken.token
+            })
         }
+        catch(err){
+            return next(new ErrorHandler(err.message, 400));
+        };
     }
     catch(err: any){
       return next(new ErrorHandler(err.message, 400));
@@ -61,3 +74,45 @@ export const createActivationToken = (user:any): IActivationToken => {
     });
     return {token, activationCode}
 }
+
+//ACTIVATE USER
+interface IActivationRequest{
+    activation_token: string;
+    activation_code: string;
+};
+
+export const activateUser = catchAsyncError(async(req:Request, res:Response, next:NextFunction) => {
+    try{
+       const {activation_token, activation_code} = req.body as IActivationRequest;
+       const newUser: {user: IUser; activationCode: string} = jwt.verify(
+        activation_token,
+        process.env.ACTIVATION_SECRET as string
+       ) as {user:IUser; activationCode:string};
+
+       //CHECKING ACTIVATION
+       if(newUser.activationCode !== activation_code){
+        return next(new ErrorHandler("Invalid activation code", 400));
+       }
+       const {name, email, password} = newUser.user;
+       const userExist = await userModel.findOne({email});
+
+       if(userExist){
+        return next(new ErrorHandler("This email already exist", 400));
+       }
+       
+       const user = await userModel.create({
+         name,
+         email,
+         password
+       });
+       res.status(201).json({
+        success:true,
+
+       });
+    }
+    catch(err){
+       return next(new ErrorHandler(err.message, 400));
+        //console.log(err)
+    }
+
+})

@@ -1,5 +1,6 @@
-import mongoose,{Document, Model, Schema} from "mongoose";
-import bcrypt from 'bcrypt';
+ import mongoose,{Document, Model, Schema} from "mongoose";
+// import bcrypt from 'bcrypt';
+const bcrypt = require('bcrypt')
 
 const emailRegexPattern: RegExp = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
