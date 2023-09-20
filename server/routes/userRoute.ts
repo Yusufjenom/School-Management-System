@@ -1,10 +1,14 @@
 const express = require('express');
-import {signupUser, activateUser} from '../controllers/user';
+import { signupUser, activateUser, loginUser, logout } from '../controllers/user';
 const userRouter = express.Router();
 
 
 userRouter.post('/signup', signupUser);
 
 userRouter.post('/activate-user', activateUser);
+
+userRouter.post('/login-user', loginUser);
+
+userRouter.get('/logout-user', logout);
 
 export default userRouter;
