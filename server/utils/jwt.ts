@@ -24,15 +24,15 @@ export const sendToken = (user: IUser, statusCode: number, res: Response) => {
 
     //COOKIE OPTION
     const accessTokenOptions: ITokenOptions = {
-        expires: new Date(Date.now() + accessTokenExpire * 1000),
-        maxAge: accessTokenExpire * 1000,
+        expires: new Date(Date.now() + accessTokenExpire * 1000 * 60 * 60),
+        maxAge: accessTokenExpire * 1000 * 60 * 60,
         httpOnly: true,
         sameSite: 'lax'
     }
 
     const refreshTokenOptions: ITokenOptions = {
-        expires: new Date(Date.now() + refreshTokenExpire * 1000),
-        maxAge: accessTokenExpire * 1000,
+        expires: new Date(Date.now() + refreshTokenExpire * 1000 * 60 * 60 * 24),
+        maxAge: accessTokenExpire * 1000 * 60 * 60 * 24,
         httpOnly: true,
         sameSite: 'lax'
     }

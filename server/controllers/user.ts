@@ -8,6 +8,8 @@ require('dotenv').config();
 const ejs = require('ejs');
 const path = require('path');
 import { sendToken } from '../utils/jwt'
+import { JwtPayload } from 'jsonwebtoken';
+import {Redis} from 'ioredis';
 
 
 //SIGNUP USER
@@ -155,12 +157,47 @@ export const logout = catchAsyncError(async (req: Request, res: Response, next: 
     try {
         res.cookie("access_token", "", { maxAge: 0 });
         res.cookie("refresh_token", "", { maxAge: 0 });
+      
+        //TO CLEAR REDIS CACHE
+        // const userId = req.user?._id || ''
+        // redis.del(userId)
         res.status(200).json({
             success: true,
             msg: "Logged out successfully"
         })
     }
     catch (err: any) {
+        return next(new ErrorHandler(err.message, 400));
+    }
+});
+
+
+//UPDATE ACCESS TOKEN
+
+export const updateAccessToken = catchAsyncError(async(req:Request, res:Response, next:NextFunction) => {
+    try{
+       const refresh_token = req.cookies.refresh_token as string;
+       const decoded = jwt.verify(refresh_token, process.env.REFRESH_TOKEN as string) as JwtPayload;
+       const message = 'Could not refresh token';
+       if(!decoded){
+        return next(new ErrorHandler(message, 400));
+       }
+    //    const session = await Redis.get(decoded.id as string);
+    //    if(!session){
+    //     return next(new ErrorHandler(message, 400));
+    //    }
+    //    const user = JSON.parse(session);
+    //    const accessToken = jwt.sign({id:user._id}, process.env.ACCESS_TOKEN as string, {
+    //     expiresIn: "5m"
+    //    })
+    //    const refreshToken = jwt.sign({id:user._id}, process.env.REFRESH_TOKEN as string, {
+    //     expiresIn: "3d"
+    //    })
+
+    // res.cookie("access_token", accessToken, accessTokenOptions)
+
+    }
+    catch(err){
         return next(new ErrorHandler(err.message, 400));
     }
 })

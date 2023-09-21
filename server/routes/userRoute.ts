@@ -1,5 +1,6 @@
 const express = require('express');
 import { signupUser, activateUser, loginUser, logout } from '../controllers/user';
+import { authorizeRoles, isAuthenticated } from '../middleware/authen';
 const userRouter = express.Router();
 
 
