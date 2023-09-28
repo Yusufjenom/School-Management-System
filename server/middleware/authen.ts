@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { catchAsyncError } from './catchAsyncError';
 import ErrorHandler from '../utils/errorHandler';
 import { Redis } from 'ioredis';
+import {redis} from '../Database/redis'
 const jwt = require('jsonwebtoken');
 
 // CHECKING FOR AUTHENTICATED USER
@@ -18,12 +19,12 @@ export const isAuthenticated = catchAsyncError(async (req: Request, res: Respons
         return next(new ErrorHandler("invalid access token", 400));
     };
 
-    // const user = await Redis.get(decoded.id);
-    // if(!user){
-    //     return next(new ErrorHandler("user not found", 400));
+    const user = await redis.get(decoded.id);
+    if(!user){
+        return next(new ErrorHandler("user not found", 400));
 
-    // }
-    // req.user = JSON.parse(user);
+    }
+    req.user = JSON.parse(user);
     next();
 });
 
