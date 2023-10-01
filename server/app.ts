@@ -9,6 +9,7 @@ require('dotenv').config();
 require('./Database/db');
 import {ErrorMiddleware} from "./middleware/error";
 import userRouter from "./routes/userRoute";
+import courseRouter from "./routes/courseRoute";
 
 //BODY PARSER
 app.use(express.json({limit: "50mb"}));
@@ -23,6 +24,7 @@ app.use(cors({
 
 //ROUTES
 app.use('/api/v1', userRouter);
+app.use('/api/v1', courseRouter);
 
 //testing the API
 app.get('/test', (req: Request, res: Response, next: NextFunction) => {
