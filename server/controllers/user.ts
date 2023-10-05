@@ -9,7 +9,6 @@ const ejs = require('ejs');
 const path = require('path');
 import { sendToken } from '../utils/jwt'
 import { JwtPayload, Secret } from 'jsonwebtoken';
-import { Redis } from 'ioredis';
 import { redis } from '../Database/redis'
 import {
     accessTokenExpire,
@@ -380,3 +379,4 @@ export const updateProfilePic = catchAsyncError(async (req: Request, res: Respon
         return next(new ErrorHandler(err.message, 400));
     }
 })
+

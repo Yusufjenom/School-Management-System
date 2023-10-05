@@ -4,7 +4,10 @@ import ErrorHandler from '../utils/errorHandler';
 import { createCourse } from '../services/courseService';
 import CourseModel from '../models/courseModel';
 import { redis } from '../Database/redis';
+import sendMail from '../utils/sendMail';
 const mongoose = require('mongoose');
+const path = require('path');
+const ejs = require('ejs');
 //import cloudinary from 'cloudinary'
 const cloudinary = require('cloudinary');
 
@@ -152,38 +155,164 @@ interface IAddQuestionData {
 
 export const addQuestion = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
     try {
-       const {question, courseId, contentId}: IAddQuestionData = req.body;
-       const course = await CourseModel.findById(contentId);
-       
-       if(!mongoose.Types.ObjectId.isValid(contentId)){
-        return next(new ErrorHandler("Invalid Contenttt Id", 400));
-       }
+        const { question, courseId, contentId }: IAddQuestionData = req.body;
+        const course = await CourseModel.findById(contentId);
 
-       const courseContent = course?.courseData.find((item:any) => item._id === contentId);
+        if (!mongoose.Types.ObjectId.isValid(contentId)) {
+            return next(new ErrorHandler("Invalid Contenttt Id", 400));
+        }
 
-       if(!courseContent){
-        return next(new ErrorHandler("Invalid Content Id", 400));
-       }
+        const courseContent = course?.courseData.find((item: any) => item._id.equals(contentId));
 
-       //create a new question object
-       const newQuestion: any = {
-        user: req.user,
-        question,
-        questionReplies:[]
-       };
+        if (!courseContent) {
+            return next(new ErrorHandler("Invalid Content Id", 400));
+        }
 
-       //adding this above question to our course content
-       courseContent.questions.push(newQuestion);
+        //create a new question object
+        const newQuestion: any = {
+            user: req.user,
+            question,
+            questionReplies: []
+        };
 
-       //save the updated course
-       await course?.save()
+        //adding this above question to our course content
+        courseContent.questions.push(newQuestion);
 
-       res.status(200).json({
-        success:true,
-        course
-       });
+        //save the updated course
+        await course?.save()
+
+        res.status(200).json({
+            success: true,
+            course
+        });
     }
     catch (err: any) {
         return next(new ErrorHandler(err.message, 500));
     }
 });
+
+//ANSWERS TO COURSE QUESTIONS
+interface IAddAnswerData {
+    answer: string;
+    coureId: string;
+    contentId: string;
+    questionId: string;
+};
+
+export const addAnswer = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const { answer, contentId, coureId, questionId }: IAddAnswerData = req.body;
+        const course = await CourseModel.findById(coureId);
+        if (!mongoose.Types.ObjectId.isValid(contentId)) {
+            return next(new ErrorHandler("Invalid Contenttt Id", 400));
+        }
+
+        const courseContent = course?.courseData.find((item: any) => item._id.equals(contentId));
+
+        if (!courseContent) {
+            return next(new ErrorHandler("Invalid Content Id", 400));
+        }
+
+        const question = courseContent?.questions?.find((item: any) => item._id.equals(questionId));
+
+        if (!question) {
+            return next(new ErrorHandler("Invalid question Id", 400));
+        }
+
+        //NEW ANSWER OBJECT
+        const newAnswer: any = {
+            user: req.user,
+            answer
+        }
+
+        //ADD ANSWER TO COURSE CONTENT
+        question.questionReplies.push(newAnswer);
+
+        await course?.save();
+
+        if (req.user?._id === question.user._id) {
+            //NOTIFICATION TO USER
+        } else {
+            const data = {
+                name: question.user.name,
+                title: courseContent.title
+            }
+            const html = await ejs.renderFile(path.join(__dirname, "../mails/question-reply.ejs"), data);
+            try {
+                await sendMail({
+                    email: question.user.email,
+                    subject: "Question Reply",
+                    template: "question-reply.ejs",
+                    data
+                });
+            }
+            catch (err: any) {
+                return next(new ErrorHandler(err.message, 400));
+            }
+        }
+
+        res.status(200).json({
+            success: true,
+            course
+        })
+
+    }
+    catch (err: any) {
+        return next(new ErrorHandler(err.message, 500));
+    }
+});
+
+//REVIEW FOR COURSE
+interface IAddReviewData {
+    review: string;
+    courseId: string;
+    rating: number;
+    userId: string;
+}
+
+export const addReview = catchAsyncError(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const userCourseList = req.user?.courses;
+
+        const courseId = req.params.id;
+
+        //if courseId Exist in userCourseList with respect to id
+        const courseExist = userCourseList?.some((course: any) => course._id.toString() === courseId.toString());
+
+        if (!courseExist) {
+            return next(new ErrorHandler("you are not eligible to access this course", 404));
+        }
+
+        const course = await CourseModel.findById(courseId);
+
+        const { review, rating } = req.body as IAddReviewData
+
+        const reviewData: any = {
+            user: req.user,
+            comment: review,
+            rating
+        }
+
+        course?.reviews.push(reviewData);
+
+        let avg = 0;
+
+        course?.reviews.forEach((rev: any) => {
+            avg += rev.rating;
+        });
+
+        if (course) {
+            course.ratings = avg / course.reviews.length;
+        }
+
+        await course?.save();
+
+        const notification ={
+            title: "New review ",
+            message: `${req.user?.name} has given a review on this course`
+        }
+    }
+    catch (err: any) {
+        return next(new ErrorHandler(err.message, 500));
+    }
+})
